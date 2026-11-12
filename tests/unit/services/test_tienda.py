@@ -61,18 +61,33 @@ class TestTiendaMuebles:
             "Error al calcular precio del mueble: precio inválido"
         )
 
+    def test_agregar_comedor_valida_y_agrega(self, tienda_vacia):
+        comedor = Mock(nombre="Comedor")
+
+        assert tienda_vacia.agregar_comedor(comedor) == (
+            "Comedor Comedor agregado exitosamente"
+        )
+        assert tienda_vacia._comedores == [comedor]
+        assert tienda_vacia.agregar_comedor(None) == "Error: El comedor no puede ser None"
+
     def test_buscar_y_filtrar_inventario(self, tienda_vacia):
         silla = Mock(nombre="Silla de madera", material="Madera")
         silla.calcular_precio.return_value = 75.0
         mesa = Mock(nombre="Mesa de vidrio", material="Vidrio")
         mesa.calcular_precio.return_value = 200.0
-        tienda_vacia._inventario = [silla, mesa]
+        mueble_con_error = Mock(nombre="Mueble inválido", material="Madera")
+        mueble_con_error.calcular_precio.side_effect = RuntimeError("error")
+        tienda_vacia._inventario = [silla, mesa, mueble_con_error]
 
         assert tienda_vacia.buscar_muebles_por_nombre("  SILLA ") == [silla]
         assert tienda_vacia.buscar_muebles_por_nombre("   ") == []
         assert tienda_vacia.filtrar_por_precio(70, 100) == [silla]
-        assert tienda_vacia.filtrar_por_material(" madera ") == [silla]
+        assert tienda_vacia.filtrar_por_material(" madera ") == [
+            silla,
+            mueble_con_error,
+        ]
         assert tienda_vacia.filtrar_por_material("") == []
+        assert tienda_vacia.filtrar_por_precio(-10, 100) == [silla]
 
     def test_aplicar_descuento_normaliza_categoria(self, tienda_vacia):
         resultado = tienda_vacia.aplicar_descuento("sillas", 10)
@@ -117,6 +132,35 @@ class TestTiendaMuebles:
         assert tienda_vacia.realizar_venta(silla_mock) == {
             "error": "El mueble no está disponible en inventario"
         }
+
+    def test_realizar_venta_reporta_error_de_calculo(self, tienda_vacia):
+        mueble = Mock(nombre="Mueble", calcular_precio=Mock(side_effect=RuntimeError("fallo")))
+        tienda_vacia._inventario = [mueble]
+
+        assert tienda_vacia.realizar_venta(mueble) == {
+            "error": "Error al procesar la venta: fallo"
+        }
+
+    def test_estadisticas_y_reporte_reflejan_estado(self, tienda_vacia, silla_mock):
+        comedor = Mock()
+        comedor.calcular_precio_total.return_value = 300.0
+        tienda_vacia.agregar_mueble(silla_mock)
+        tienda_vacia.agregar_comedor(comedor)
+        tienda_vacia.aplicar_descuento("sillas", 10)
+
+        estadisticas = tienda_vacia.obtener_estadisticas()
+        assert estadisticas["total_muebles"] == 1
+        assert estadisticas["total_comedores"] == 1
+        assert estadisticas["valor_inventario"] == 75.0
+        assert estadisticas["tipos_muebles"] == {"Mock": 1}
+        assert estadisticas["descuentos_activos"] == {"Silla": 0.1}
+
+        assert tienda_vacia.estadisticas() == estadisticas
+        reporte = tienda_vacia.generar_reporte_inventario()
+        assert "Total de muebles: 1" in reporte
+        assert "Total de comedores: 1" in reporte
+        assert "- Mock: 1 unidades" in reporte
+        assert "- Silla: 10.0%" in reporte
 
     def test_obtener_muebles_por_tipo_filtra_instancias(self, tienda_vacia):
         silla = Silla("Silla", "Madera", "Negro", 50.0)
