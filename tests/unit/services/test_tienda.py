@@ -3,6 +3,8 @@ from unittest.mock import Mock
 import pytest
 
 from src.services.tienda import TiendaMuebles
+from src.models.concretos.mesa import Mesa
+from src.models.concretos.silla import Silla
 
 
 class TestTiendaMuebles:
@@ -114,4 +116,32 @@ class TestTiendaMuebles:
     ):
         assert tienda_vacia.realizar_venta(silla_mock) == {
             "error": "El mueble no está disponible en inventario"
+        }
+
+    def test_obtener_muebles_por_tipo_filtra_instancias(self, tienda_vacia):
+        silla = Silla("Silla", "Madera", "Negro", 50.0)
+        mesa = Mesa("Mesa", "Madera", "Natural", 200.0)
+        tienda_vacia._inventario = [silla, mesa]
+
+        assert tienda_vacia.obtener_muebles_por_tipo(Silla) == [silla]
+
+    def test_calcular_valor_inventario_suma_muebles_y_comedores(
+        self, tienda_vacia
+    ):
+        silla = Silla("Silla", "Madera", "Negro", 50.0)
+        comedor = Mock()
+        comedor.calcular_precio_total.return_value = 300.0
+        tienda_vacia._inventario = [silla]
+        tienda_vacia._comedores = [comedor]
+
+        assert tienda_vacia.calcular_valor_inventario() == 355.0
+
+    def test_contar_tipos_muebles(self, tienda_vacia):
+        silla = Silla("Silla", "Madera", "Negro", 50.0)
+        mesa = Mesa("Mesa", "Madera", "Natural", 200.0)
+        tienda_vacia._inventario = [silla, mesa, silla]
+
+        assert tienda_vacia._contar_tipos_muebles() == {
+            "Silla": 2,
+            "Mesa": 1,
         }
