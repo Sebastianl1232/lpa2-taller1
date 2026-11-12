@@ -1,8 +1,11 @@
 from unittest.mock import Mock, patch
 
+import pytest
+
 from src import main
 
 
+@pytest.mark.integration
 class TestFuncionesIniciales:
     def test_crear_catalogo_inicial_agrega_todos_los_muebles(self):
         tienda = Mock()
