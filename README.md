@@ -24,16 +24,15 @@
 lpa2-taller1/
 ├─ src/                   # Código del proyecto
 ├─ tests/
-│  ├─ fixtures/          # Datos de prueba
+│  ├─ conftest.py        # Marcadores y configuración compartida
 │  ├─ unit/              # Pruebas unitarias
-│  │  ├─ conftest.py     # Configuración compartida
 │  │  └─ models/
-│  │     ├─ test_mueble.py
-│  │     ├─ categorias/
+│  │     ├─ test_mueble.py
+│  │     ├─ categorias/
 │  │     │  ├─ test_almacenamiento.py
 │  │     │  ├─ test_asientos.py
 │  │     │  └─ test_superficies.py
-│  │     ├─ concretos/
+│  │     ├─ concretos/
 │  │     │  ├─ test_armario.py
 │  │     │  ├─ test_cajonera.py
 │  │     │  ├─ test_cama.py
@@ -43,12 +42,17 @@ lpa2-taller1/
 │  │     │  ├─ test_silla.py
 │  │     │  ├─ test_sillon.py
 │  │     │  ├─ test_sofa.py
-│  │     │  └─ test_sofacama.py
-│  │     └─ composicion/
-│  │        └─ test_comedor.py
-│  └─ integration/       # Pruebas de integración
+│  │     │  ├─ test_sofacama.py
+│  │     │  └─ test_comedor_legacy.py
+│  │  ├─ services/       # Pruebas de lógica de negocio
+│  │  │  └─ test_tienda.py
+│  │  └─ ui/             # Pruebas de interfaz con mocks
+│  │     └─ test_menu.py
+│  └─ integration/      # Pruebas de integración
+│     └─ test_main.py
 ├─ .coveragerc           # Configuración de cobertura
-└─ pytest.ini            # Configuración de pytest
+├─ pytest.ini            # Configuración de pytest
+└─ requirements.txt      # Dependencias de desarrollo
 ```
 
 ## Configuración del Entorno
@@ -243,7 +247,7 @@ class TestSofaCama:
 
 ### Pruebas para Composición
 
-**tests/unit/models/composicion/test_comedor.py:**
+**tests/unit/models/concretos/test_comedor.py:**
 
 ```python
 import pytest
@@ -277,13 +281,13 @@ class TestComedor:
 ```python
 import pytest
 from unittest.mock import Mock, patch
-from src.services.tienda import Tienda
+from src.services.tienda import TiendaMuebles
 from src.models.concretos.silla import Silla
 
 class TestTienda:
     @pytest.fixture
     def tienda_vacia(self):
-        return Tienda()
+        return TiendaMuebles()
     
     @pytest.fixture
     def silla_mock(self):
@@ -352,6 +356,12 @@ class TestTienda:
     pytest -m "not slow"
     ```
 
+- Ejecutar únicamente las pruebas de integración
+
+    ```bash
+    pytest -m integration
+    ```
+
 ### Marcadores de Pruebas
 
 **tests/conftest.py:**
@@ -398,7 +408,7 @@ def test_integracion_completa():
 # tests/unit/services/test_descuentos.py
 def test_aplicar_descuento_por_material():
     # RED: Escribir prueba primero
-    tienda = Tienda()
+    tienda = TiendaMuebles()
     silla = Silla("Silla", "Roble", 100.0, 4, "Roble")
     
     tienda.agregar_producto(silla)
@@ -492,6 +502,13 @@ El estudiante debe actualizar su repositorio personal con:
 5. **Reporte de cobertura** HTML generado
 6. **README actualizado** con instrucciones de ejecución
 
+Resultado actual:
+
+- 135 pruebas automatizadas pasando.
+- Cobertura total: **83.93%**.
+- Cobertura mínima configurada: **80%**.
+- Reporte HTML disponible en `htmlcov/index.html` después de ejecutar `pytest`.
+
 ## Recursos Adicionales
 
 ### Documentación Oficial
@@ -529,4 +546,3 @@ El estudiante debe actualizar su repositorio personal con:
     ```
 
 **Nota**: repo [solución al proyecto Muebles](https://github.com/axlcraft/lpa1-taller-poo).
-
